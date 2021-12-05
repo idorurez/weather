@@ -57,34 +57,33 @@ extern DallasTemperature temperatureSensor;
 //===========================================
 struct sensorData
 {
-  float tempC;
-  float tempF;
-  float windSpeed;
-  double windDir;
-  char windCardDir[15];
-  float rain;
+  float tempC = 0;
+  float tempF = 0;
+  float windSpeed = 0;
+  double windDir = 0;
+  char windCardDir[15] = "NULL";
+  float rain = 0;
 
-  float bsecRawTemp;
-  float bsecRawHumidity;
-  float bsecTemp;
-  float bsecPressure;
-  float bsecGasResistance;
-  float bsecHumidity;
-  float bsecIaq; 
-  float bsecIaqAccuracy;
-  float bsecStaticIaq;
-  float bsecCo2Equiv;
-  float bsecBreathVocEquiv;
+  float bsecRawTemp = 0;
+  float bsecRawHumidity = 0;
+  float bsecTemp = 0;
+  float bsecPressure = 0;
+  float bsecGasResistance = 0;
+  float bsecHumidity = 0;
+  float bsecIaq = 0; 
+  float bsecIaqAccuracy = 0;
+  float bsecStaticIaq = 0;
+  float bsecCo2Equiv = 0;
+  float bsecBreathVocEquiv = 0;
   
-  float uvIndex;
-  float visLight;
-  float infLight;
-  float lux;
-  float batteryVoltage;
+  float uvIndex = 0;
+  float visLight = 0;
+  float infLight = 0;
+  float lux = 0;
+  float batteryVoltage = 0;
   
-  int photoResistor;
-  
-  int batteryAdc;
+  int photoResistor = 0;
+  int batteryAdc = 0;
 };
 
 //rainfall is stored here for historical data uses RTC
@@ -180,7 +179,7 @@ void setup()
   temperatureSensor.begin();
 
   updateWake();
-  wakeup_reason();
+  wakeupReason();
 
   if (WiFiEnable)
   {
@@ -215,7 +214,7 @@ void loop()
 // 3. WAKE on TIMER - send sensor data to IOT target
 //===========================================================
 //check for WAKE reason and respond accordingly
-void wakeup_reason()
+void wakeupReason()
 {
   esp_sleep_wakeup_cause_t wakeupReason;
 

@@ -24,12 +24,31 @@ void sendData(struct sensorData *environment)
   uint16_t server_port = db_port;
 
           
-  // char query[1024];
+  char query[1024];
   // char INSERT_DATA[] = "INSERT INTO weatherdb.master_sensor_vals ( DS18B20_TEMP, WIND_DIR, WIND_CARD_DIR, WIND_SPEED, RAIN, SI1145_UV_INDEX, SI1145_VIS_LIGHT, SI1145_INF_LIGHT, BSEC_RAW_TEMP, BSEC_RAW_HUMIDITY, BSEC_TEMP, BSEC_HUMIDITY, BSEC_PRESSURE, BSEC_GAS_RESISTANCE, BSEC_IAQ, BSEC_IAQ_ACCURACY, BSEC_STATIC_IAQ, BSEC_CO2_EQUIV, BSEC_BREATH_VOC_EQUIV, BH1750_LUX, BATTERY_VOLTAGE ) VALUES (%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f)";
-  // sprintf(query, INSERT_DATA, environment->tempF, environment->windDir, environment->windCardDir, environment->windSpeed, environment->rain, environment->uvIndex, environment->visLight, environment->infLight, environment->bsecRawTemp, environment->bsecRawHumidity, environment->bsecTemp, environment->bsecHumidity, environment->bsecPressure, environment->bsecGasResistance, environment->bsecIaq, environment->bsecIaqAccuracy, environment->bsecStaticIaq, environment->bsecCo2Equiv, environment->bsecBreathVocEquiv, environment->lux, environment->batteryVoltage);
+  char INSERT_DATA[] = "INSERT INTO weatherdb.master_sensor_vals ( DS18B20_TEMP, WIND_DIR, WIND_CARD_DIR, WIND_SPEED, RAIN, SI1145_UV_INDEX, SI1145_VIS_LIGHT, SI1145_INF_LIGHT, BSEC_RAW_TEMP, BSEC_RAW_HUMIDITY, BSEC_TEMP, BSEC_HUMIDITY, BSEC_PRESSURE, BSEC_GAS_RESISTANCE, BSEC_IAQ, BSEC_IAQ_ACCURACY, BSEC_STATIC_IAQ, BSEC_CO2_EQUIV, BSEC_BREATH_VOC_EQUIV, BH1750_LUX, BATTERY_VOLTAGE ) VALUES (%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f)";
+  sprintf(query, INSERT_DATA, environment->tempF, 
+                              environment->windDir, 
+                              environment->windCardDir, 
+                              environment->windSpeed, 
+                              environment->rain, 
+                              environment->uvIndex, 
+                              environment->visLight, 
+                              environment->infLight, 
+                              environment->bsecRawTemp, 
+                              environment->bsecRawHumidity, 
+                              environment->bsecTemp, 
+                              environment->bsecHumidity, 
+                              environment->bsecPressure, 
+                              environment->bsecGasResistance, 
+                              environment->bsecIaq, 
+                              environment->bsecIaqAccuracy, 
+                              environment->bsecStaticIaq, 
+                              environment->bsecCo2Equiv, 
+                              environment->bsecBreathVocEquiv, 
+                              environment->lux, 
+                              environment->batteryVoltage);
   // sprintf(query, INSERT_DATA, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-  String query = "INSERT INTO weatherdb.master_sensor_vals ( DS18B20_TEMP, WIND_DIR, WIND_CARD_DIR, WIND_SPEED, RAIN, SI1145_UV_INDEX, SI1145_VIS_LIGHT, SI1145_INF_LIGHT, BSEC_RAW_TEMP, BSEC_RAW_HUMIDITY, BSEC_TEMP, BSEC_HUMIDITY, BSEC_PRESSURE, BSEC_GAS_RESISTANCE, BSEC_IAQ, BSEC_IAQ_ACCURACY, BSEC_STATIC_IAQ, BSEC_CO2_EQUIV, BSEC_BREATH_VOC_EQUIV, BH1750_LUX, BATTERY_VOLTAGE ) VALUES (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)";
 
   WiFiClient client;
   MySQL_Connection conn((Client *)&client);
@@ -45,7 +64,7 @@ void sendData(struct sensorData *environment)
         Serial.println(query);
       // Execute the query
       // KH, check if valid before fetching
-      if (!query_mem.execute(query.c_str())) {
+      if (!query_mem.execute(query)) {
         MYSQL_DISPLAY("Insert error");
       } else {
         MYSQL_DISPLAY("Data Inserted.");
