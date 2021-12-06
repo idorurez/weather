@@ -6,6 +6,7 @@
 // alfredy@gmail.com
 
 #define VERSION 1.2
+#define USE_EEPROM
 
 //===========================================
 // Includes

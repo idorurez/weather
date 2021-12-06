@@ -39,7 +39,7 @@ void readEEPROM(struct historicalData *rainfall)
   //If EEPROM contains non-zero values, restore data to historical structure
   if (nonZero)
   {
-    Serial.printf("\nRestoring rainfall structure from EEPROM\n");
+    MonPrintf("\nRestoring rainfall structure from EEPROM\n");
     memcpy(rainfall, buffer, structSize);
   }
 }
@@ -69,18 +69,18 @@ void writeEEPROM(struct historicalData *rainfall)
     Wire.beginTransmission(EEPROM_I2C_ADDRESS);
     Wire.write((int)(pageAddr >> 8));
     Wire.write((int)(pageAddr & 0xFF));
-    Serial.printf("\npageAddr: %04x\n", pageAddr);
+    MonPrintf("\npageAddr: %04x\n", pageAddr);
     for (writePosition = pageAddr; writePosition < (pageAddr + pageSize); writePosition++)
     {
       if (writePosition < structSize)
       {
-        //Serial.printf("position: % 02x: % 02x\n", writePosition, buffer[writePosition]);
+        //MonPrintf("position: % 02x: % 02x\n", writePosition, buffer[writePosition]);
         Wire.write(buffer[writePosition]);
       }
     }
     Wire.endTransmission();
     delay(10);
-    Serial.printf("page write\n");
+    MonPrintf("page write\n");
   }
 }
 
@@ -92,7 +92,7 @@ void initEEPROM(void)
   int structSize;
   int x;
   structSize = sizeof(historicalData);
-  Serial.printf("sizeof int: %i\n", sizeof(int));
+  MonPrintf("sizeof int: %i\n", sizeof(int));
   for (x = 0; x < structSize; x++)
   {
     Wire.beginTransmission(EEPROM_I2C_ADDRESS);
@@ -124,7 +124,7 @@ void conditionalWriteEEPROM(struct historicalData *rainfall)
   {
     if (historyBuffer.hourlyRainfall[hour] != rainfall->hourlyRainfall[hour])
     {
-      //Serial.printf("Hourly rainfall: %i\n", rainfall->hourlyRainfall[hour]);
+      //MonPrintf("Hourly rainfall: %i\n", rainfall->hourlyRainfall[hour]);
       match = false;
     }
   }
@@ -134,7 +134,7 @@ void conditionalWriteEEPROM(struct historicalData *rainfall)
   {
     if (historyBuffer.current60MinRainfall[hour] != rainfall->current60MinRainfall[hour])
     {
-      //Serial.printf("This hour rainfall: %i\n", rainfall->current60MinRainfall[hour]);
+      //MonPrintf("This hour rainfall: %i\n", rainfall->current60MinRainfall[hour]);
       match = false;
     }
   }

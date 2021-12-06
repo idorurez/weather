@@ -48,7 +48,6 @@ void readWindSpeed(struct sensorData *environment )
 #ifdef METRIC
   windSpeed =  windSpeed * 1.60934;
 #endif
-  // Serial.printf("WindSpeed: %f\n", windSpeed);
   Serial.println("WindSpeed: " + String(windSpeed));
   windSpeed = int((windSpeed + .05) * 10) / 10;
   environment->windSpeed = windSpeed;
