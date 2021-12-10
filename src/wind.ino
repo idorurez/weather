@@ -82,7 +82,6 @@ void readWindDirection(struct sensorData *environment)
   Serial.printf("Analog value: %i Wind direction: %s  \n", vin, windDirection);
   windDirection.toCharArray(buffer, 5);
   environment->windDir = atof(buffer);
-  // strcpy(environment->wind_card_dir, windCardinalDirection.c_str());
   strcpy(environment->windCardDir, windCardinalDirection.c_str());
 }
 

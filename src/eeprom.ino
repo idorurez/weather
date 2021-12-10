@@ -39,7 +39,7 @@ void readEEPROM(struct historicalData *rainfall)
   //If EEPROM contains non-zero values, restore data to historical structure
   if (nonZero)
   {
-    MonPrintf("\nRestoring rainfall structure from EEPROM\n");
+    Serial.println("\nRestoring rainfall structure from EEPROM\n");
     memcpy(rainfall, buffer, structSize);
   }
 }
@@ -69,7 +69,8 @@ void writeEEPROM(struct historicalData *rainfall)
     Wire.beginTransmission(EEPROM_I2C_ADDRESS);
     Wire.write((int)(pageAddr >> 8));
     Wire.write((int)(pageAddr & 0xFF));
-    MonPrintf("\npageAddr: %04x\n", pageAddr);
+    // TODO: WHAT IS THIS
+    // Serial.println("\npageAddr: %04x\n", pageAddr);
     for (writePosition = pageAddr; writePosition < (pageAddr + pageSize); writePosition++)
     {
       if (writePosition < structSize)
@@ -80,7 +81,7 @@ void writeEEPROM(struct historicalData *rainfall)
     }
     Wire.endTransmission();
     delay(10);
-    MonPrintf("page write\n");
+    Serial.println("page write\n");
   }
 }
 
@@ -92,7 +93,7 @@ void initEEPROM(void)
   int structSize;
   int x;
   structSize = sizeof(historicalData);
-  MonPrintf("sizeof int: %i\n", sizeof(int));
+  // Serial.println("sizeof int: %i\n", sizeof(int));
   for (x = 0; x < structSize; x++)
   {
     Wire.beginTransmission(EEPROM_I2C_ADDRESS);

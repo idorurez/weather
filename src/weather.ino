@@ -28,7 +28,7 @@
 #include <bsec.h>
 #include <ArduinoOTA.h>
 #include <WiFi.h>
-
+#include <esp32fota.h>
 
 //===========================================
 // Defines
@@ -121,10 +121,23 @@ void IRAM_ATTR rainTick(void);
 void IRAM_ATTR windTick(void);
 
 //===========================================
+// OTA:
+//===========================================
+
+
+//===========================================
 // setup:
 //===========================================
+
+
+esp32FOTA esp32FOTA("esp32-fota-main-weather", 1);
+
 void setup()
 {
+
+  esp32FOTA.checkURL = "http://192.168.50.105/build/build.json";
+
+
   int UpdateIntervalModified = 0;
   
   esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
@@ -184,6 +197,16 @@ void setup()
 
   if (WiFiEnable)
   {
+
+    Serial.println("Checking if OTA build exists");
+    bool updatedNeeded = esp32FOTA.execHTTPcheck();
+    if (updatedNeeded) {
+      Serial.println("Update needed");
+      esp32FOTA.execOTA();
+    } else {
+      Serial.println("Update not needed");
+    }
+
     Serial.printf("Connecting to WiFi\n");
     processSensorUpdates();
   }
