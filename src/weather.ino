@@ -198,6 +198,9 @@ void setup()
   if (WiFiEnable)
   {
 
+    Serial.printf("Connecting to WiFi\n");
+    wifiConnect();
+
     Serial.println("Checking if OTA build exists");
     bool updatedNeeded = esp32FOTA.execHTTPcheck();
     if (updatedNeeded) {
@@ -206,9 +209,11 @@ void setup()
     } else {
       Serial.println("Update not needed");
     }
-
-    Serial.printf("Connecting to WiFi\n");
+    Serial.println("Checking sensors for updates");
     processSensorUpdates();
+
+    
+
   }
 
   // ESP32 Deep Sleep Mode
@@ -296,7 +301,6 @@ void processSensorUpdates(void)
 #ifdef USE_EEPROM
   readEEPROM(&rainfall);
 #endif
-  wifiConnect();
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   printLocalTime();
   printTimeNextWake();
