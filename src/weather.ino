@@ -5,7 +5,7 @@
 // Additional rewrite by Alfred Young
 // alfredy@gmail.com
 
-#define VERSION 1.2
+#define BUILD_VER 2.11
 #define USE_EEPROM
 
 //===========================================
@@ -62,7 +62,7 @@ struct sensorData
   float tempF = 0;
   float windSpeed = 0;
   double windDir = 0;
-  char windCardDir[15] = "NULL";
+  char windCardDir[16] = "NULL";
   float rain = 0;
 
   float bsecRawTemp = 0;
@@ -113,6 +113,8 @@ Adafruit_SI1145 uv = Adafruit_SI1145();
 bool lowBattery = false;
 bool WiFiEnable = false;
 const float SEA_LEVEL_PRESSURE = 1013.25;         ///< Standard atmosphere sea level pressure
+OneWire oneWire(TEMP_PIN);
+DallasTemperature temperatureSensor(&oneWire);
 
 //===========================================
 // ISR Prototypes
@@ -130,7 +132,7 @@ void IRAM_ATTR windTick(void);
 //===========================================
 
 
-esp32FOTA esp32FOTA("esp32-fota-main-weather", 1);
+esp32FOTA esp32FOTA("esp32-fota-main-weather", BUILD_VER);
 
 void setup()
 {
@@ -152,11 +154,13 @@ void setup()
   delay(25);
   
   Serial.printf("\nWeather station - Deep sleep version.\n");
-  Serial.printf("Version %f\n\n", VERSION);
+  Serial.printf("Version %f\n\n", BUILD_VER);
   BlinkLED(1);
   bootCount++;
   
   Wire.begin();
+  temperatureSensor.begin();
+  temperatureSensor.requestTemperatures();
 
   // Init UV sensor
   if (! uv.begin()) {
@@ -189,8 +193,6 @@ void setup()
   } else {
     Serial.println(F("Error initialising BH1750 lux meter"));
   }
-  
-  temperatureSensor.begin();
 
   updateWake();
   wakeupReason();

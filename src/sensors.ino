@@ -1,6 +1,3 @@
-OneWire oneWire(TEMP_PIN);
-DallasTemperature temperatureSensor(&oneWire);
-
 //=======================================================
 //  readSensors: Read all sensors and battery voltage
 //=======================================================
@@ -22,6 +19,7 @@ void readSensors(struct sensorData *environment)
 void readTemperature (struct sensorData *environment)
 {
   Serial.println("Requesting temperatures...\n");
+  
   temperatureSensor.requestTemperatures();
   Serial.println("DONE");
   environment->tempC = temperatureSensor.getTempCByIndex(0);
