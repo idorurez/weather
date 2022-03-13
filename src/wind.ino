@@ -1,55 +1,26 @@
 //=======================================================
 // Variables used in calculating the windspeed (from ISR)
 //=======================================================
-volatile unsigned long timeSinceLastTick = 0;
+volatile unsigned long lastWindCheck = 0;
 volatile unsigned long lastTick = 0;
-volatile unsigned long tickTime[20] = {0};
-volatile int count = 0;
+volatile int windClicks = 0;
 
 //========================================================================
 //  readWindSpeed: Look at ISR data to see if we have wind data to average
 //========================================================================
 void readWindSpeed(struct sensorData *environment )
 {
-  float windSpeed = 0;
-  int position;
-  //int msBetweenSamples = 0;
-  long msTotal = 0;
-  int samples = 0;
+  float deltaTime = millis() - lastWindCheck;
 
-  //intentionally ignore the zeroth element
-  //look at up to 3 (or 6) revolutions to get wind speed
-  //Again, I see 2 ticks on anemometer
-  if (count)
-  {
-    for (position = 1; position < 7; position++)
-    {
-      //msBetweenSamples = tickTime[position + 1] - tickTime[position];
-      if (tickTime[position])
-      {
-        msTotal += tickTime[position];
-        samples ++;
-      }
-    }
-  }
-  //Average samples
-  if (msTotal > 0 && samples > 0)
-  {
-    windSpeed = 1.49 * 1000 / (msTotal / samples);
-  }
-  else
-  {
-    Serial.printf("No Wind data");
-    windSpeed = 0;
-  }
-  //I see 2 ticks per revolution
-  windSpeed = windSpeed / WIND_TICKS_PER_REVOLUTION;
+  deltaTime /= 1000.0; // convert to seconds
 
-#ifdef METRIC
-  windSpeed =  windSpeed * 1.60934;
-#endif
+  float windSpeed = (float) windClicks / deltaTime;
+
+  windClicks = 0;
+  lastWindCheck = millis(); 
+  windSpeed *= 1.492;
+  
   Serial.println("WindSpeed: " + String(windSpeed));
-  windSpeed = int((windSpeed + .05) * 10) / 10;
   environment->windSpeed = windSpeed;
 }
 
@@ -90,13 +61,10 @@ void readWindDirection(struct sensorData *environment)
 //=======================================================
 void IRAM_ATTR windTick(void)
 {
-  timeSinceLastTick = millis() - lastTick;
-  //software debounce attempt
-  //record up to 10 ticks from anemometer
-  if (timeSinceLastTick > 10 && count < 10)
+  long timeSinceLastTick = millis() - lastTick;
+  if (timeSinceLastTick > 10)
   {
     lastTick = millis();
-    tickTime[count] = timeSinceLastTick;
-    count++;
+    windClicks++;
   }
 }
