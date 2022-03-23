@@ -87,6 +87,10 @@ struct sensorData
   int batteryAdc = 0;
 };
 
+  const uint8_t bsec_config_iaq[] = {
+  #include "config/generic_33v_300s_4d/bsec_iaq.txt"
+  };
+
 //rainfall is stored here for historical data uses RTC
 struct historicalData
 {
@@ -171,6 +175,7 @@ void setup()
 
   // Init BME680 using bsec library
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
+  iaqSensor.setConfig(bsec_config_iaq);
   bsec_virtual_sensor_t sensorList[10] = {
     BSEC_OUTPUT_RAW_TEMPERATURE,
     BSEC_OUTPUT_RAW_PRESSURE,
@@ -184,11 +189,11 @@ void setup()
     BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
   };
   
-  iaqSensor.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_LP);
+  iaqSensor.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_ULP);
   CheckIAQSensor();
 
   // Init lightmeter
-  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+  if (lightMeter.begin(BH1750::CONTINUOUS_LOW_RES_MODE)) {
     Serial.println(F("BH1750 lux meter initialized"));
   } else {
     Serial.println(F("Error initialising BH1750 lux meter"));
@@ -203,14 +208,14 @@ void setup()
     Serial.printf("Connecting to WiFi\n");
     wifiConnect();
 
-    Serial.println("Checking if OTA build exists");
-    bool updatedNeeded = esp32FOTA.execHTTPcheck();
-    if (updatedNeeded) {
-      Serial.println("Update needed");
-      esp32FOTA.execOTA();
-    } else {
-      Serial.println("Update not needed");
-    }
+    // Serial.println("Checking if OTA build exists");
+    // bool updatedNeeded = esp32FOTA.execHTTPcheck();
+    // if (updatedNeeded) {
+    //   Serial.println("Update needed");
+    //   esp32FOTA.execOTA();
+    // } else {
+    //   Serial.println("Update not needed");
+    // }
     Serial.println("Checking sensors for updates");
     processSensorUpdates();
 

@@ -43,10 +43,13 @@ void readBattery (struct sensorData *environment)
   int val;
   float Vout;
   val = analogRead(VOLT_PIN);
-  //this value may need tweaking for your voltage divider
-  //cabibration = 4.2V/analog value read @ 4.2V
-  environment->batteryAdc = val;
-  environment->batteryVoltage = val * batteryCalFactor;
+  // Vout = Dout * Vmax / Dmax, Dmax is maximum output adc raw digital result, for esp32 it is 4095 with single or continuous read mode
+  // Vout = val * (3.3 / 4095.0); // formula for calculating voltage out 
+  Vout = val * 0.0008058608;
+  // Battery voltage = Vout * ( R2+R1) / R2
+  // Battery voltage = val * (3.3 / 4095) * 1.27
+  environment->batteryAdc = Vout;
+  environment->batteryVoltage = Vout * 1.27;
   Serial.printf("Battery digital :%i voltage: %6.2f\n", val, environment->batteryVoltage);
   //check for low battery situation
   if (environment->batteryVoltage < 3.78)
