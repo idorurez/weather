@@ -45,6 +45,5 @@ const int UpdateIntervalSeconds = 5 * 60;  //Sleep timer (60s) testing
 //Battery calibration
 //===========================================
 //measured battery voltage/ADC reading
-#define batteryCalFactor .001167
-
-#define MQTT
+// #define batteryCalFactor .001167
+#define batteryCalFactor 0.001179656512203

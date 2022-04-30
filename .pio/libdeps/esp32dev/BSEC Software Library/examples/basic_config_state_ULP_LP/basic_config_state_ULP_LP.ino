@@ -14,7 +14,7 @@
     generic_33v_300s_28d
 */
 const uint8_t bsec_config_iaq[] = {
-#include "config/generic_33v_3s_4d/bsec_iaq.txt"
+#include "config/generic_33v_3s_28d/bsec_iaq.txt"
 };
 
 #define STATE_SAVE_PERIOD	UINT32_C(360 * 60 * 1000) // 360 minutes - 4 times a day

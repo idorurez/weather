@@ -29,19 +29,24 @@ void printTimeNextWake( void)
 //=======================================================================
 void updateWake (void)
 {
-  int muliplierBatterySave = 1;
-  if (lowBattery)
-  {
-    muliplierBatterySave = 4;
-  }
+  // int muliplierBatterySave = 1;
+  // if (lowBattery)
+  // {
+  //   muliplierBatterySave = 4;
+  // }
+  // getLocalTime(&timeinfo);
+  // //180 added to wipe out any RTC timing error vs NTP server - causing 2 WAKES back to back
+  // nextUpdate = mktime(&timeinfo) + UpdateIntervalSeconds * muliplierBatterySave + 180;
+  // nextUpdate = nextUpdate - nextUpdate % (UpdateIntervalSeconds * muliplierBatterySave);
+  // // Intentional offset for data aquire before display unit updates
+  // // guarantees fresh data
+  // if (nextUpdate > 120)
+  // {
+  //   nextUpdate -= 60;
+  // }
+
   getLocalTime(&timeinfo);
-  //180 added to wipe out any RTC timing error vs NTP server - causing 2 WAKES back to back
-  nextUpdate = mktime(&timeinfo) + UpdateIntervalSeconds * muliplierBatterySave + 180;
-  nextUpdate = nextUpdate - nextUpdate % (UpdateIntervalSeconds * muliplierBatterySave);
-  // Intentional offset for data aquire before display unit updates
-  // guarantees fresh data
-  if (nextUpdate > 120)
-  {
-    nextUpdate -= 60;
-  }
+  nextUpdate = mktime(&timeinfo) + UpdateIntervalSeconds;
+  nextUpdate = nextUpdate - nextUpdate % UpdateIntervalSeconds;
+
 }

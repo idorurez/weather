@@ -5,7 +5,7 @@
 // Additional rewrite by Alfred Young
 // alfredy@gmail.com
 
-#define BUILD_VER 2.11
+#define BUILD_VER 3.1
 #define USE_EEPROM
 
 //===========================================
@@ -29,6 +29,9 @@
 #include <ArduinoOTA.h>
 #include <WiFi.h>
 #include <esp32fota.h>
+
+#include <EEPROM.h>
+#define LOG(fmt, ...) (Serial.printf("%09llu: " fmt "\n", GetTimestamp(), ##__VA_ARGS__))
 
 //===========================================
 // Defines
@@ -87,9 +90,23 @@ struct sensorData
   int batteryAdc = 0;
 };
 
-  const uint8_t bsec_config_iaq[] = {
+const uint8_t bsec_config_iaq[] = {
   #include "config/generic_33v_300s_4d/bsec_iaq.txt"
-  };
+};
+
+
+bsec_virtual_sensor_t sensorList[10] = {
+  BSEC_OUTPUT_RAW_TEMPERATURE,
+  BSEC_OUTPUT_RAW_PRESSURE,
+  BSEC_OUTPUT_RAW_HUMIDITY,
+  BSEC_OUTPUT_RAW_GAS,
+  BSEC_OUTPUT_IAQ,
+  BSEC_OUTPUT_STATIC_IAQ,
+  BSEC_OUTPUT_CO2_EQUIVALENT,
+  BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+  BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+  BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+};
 
 //rainfall is stored here for historical data uses RTC
 struct historicalData
@@ -97,7 +114,6 @@ struct historicalData
   unsigned int hourlyRainfall[24];
   unsigned int current60MinRainfall[12];
 };
-
 
 //===========================================
 // RTC Memory storage
@@ -107,6 +123,9 @@ RTC_DATA_ATTR int lastHour = 0;
 RTC_DATA_ATTR time_t nextUpdate;
 RTC_DATA_ATTR struct historicalData rainfall;
 RTC_DATA_ATTR int bootCount = 0;
+//======== BSEC STUFF
+RTC_DATA_ATTR uint8_t sensor_state[BSEC_MAX_STATE_BLOB_SIZE] = {0};
+RTC_DATA_ATTR int64_t sensor_state_time = 0;
 
 //===========================================
 // Global instantiation
@@ -126,17 +145,36 @@ DallasTemperature temperatureSensor(&oneWire);
 void IRAM_ATTR rainTick(void);
 void IRAM_ATTR windTick(void);
 
+
+int64_t GetTimestamp() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (tv.tv_sec * 1000LL + (tv.tv_usec / 1000LL));
+}
+
+
+void DumpState(const char* name, const uint8_t* state) {
+  LOG("%s:", name);
+  for (int i = 0; i < BSEC_MAX_STATE_BLOB_SIZE; i++) {
+    Serial.printf("%02x ", state[i]);
+    if (i % 16 == 15) {
+      Serial.print("\n");
+    }
+  }
+  Serial.print("\n");
+}
 //===========================================
 // OTA:
 //===========================================
+
+
+esp32FOTA esp32FOTA("esp32-fota-main-weather", BUILD_VER);
 
 
 //===========================================
 // setup:
 //===========================================
 
-
-esp32FOTA esp32FOTA("esp32-fota-main-weather", BUILD_VER);
 
 void setup()
 {
@@ -153,10 +191,8 @@ void setup()
   pinMode(RAIN_PIN, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  
-  Serial.begin(115200);
-  delay(25);
-  
+
+  Serial.begin(115200);  
   Serial.printf("\nWeather station - Deep sleep version.\n");
   Serial.printf("Version %f\n\n", BUILD_VER);
   BlinkLED(1);
@@ -175,25 +211,25 @@ void setup()
 
   // Init BME680 using bsec library
   iaqSensor.begin(BME680_I2C_ADDR_SECONDARY, Wire);
-  iaqSensor.setConfig(bsec_config_iaq);
-  bsec_virtual_sensor_t sensorList[10] = {
-    BSEC_OUTPUT_RAW_TEMPERATURE,
-    BSEC_OUTPUT_RAW_PRESSURE,
-    BSEC_OUTPUT_RAW_HUMIDITY,
-    BSEC_OUTPUT_RAW_GAS,
-    BSEC_OUTPUT_IAQ,
-    BSEC_OUTPUT_STATIC_IAQ,
-    BSEC_OUTPUT_CO2_EQUIVALENT,
-    BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
-    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
-    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
-  };
-  
-  iaqSensor.updateSubscription(sensorList, 10, BSEC_SAMPLE_RATE_ULP);
+  iaqSensor.setConfig(bsec_config_iaq); 
+  if (sensor_state_time) {
+    DumpState("setState", sensor_state);
+    iaqSensor.setState(sensor_state);
+    if (!CheckIAQSensor()) {
+      LOG("Failed to set state!");
+      return;
+    } else {
+      LOG("Successfully set state from %lld", sensor_state_time);
+    }
+  } else {
+    LOG("Saved state missing");
+  }
+
+  iaqSensor.updateSubscription(sensorList, sizeof(sensorList) / sizeof(sensorList[0]), BSEC_SAMPLE_RATE_ULP);
   CheckIAQSensor();
 
   // Init lightmeter
-  if (lightMeter.begin(BH1750::CONTINUOUS_LOW_RES_MODE)) {
+  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE_2)) {
     Serial.println(F("BH1750 lux meter initialized"));
   } else {
     Serial.println(F("Error initialising BH1750 lux meter"));
@@ -208,19 +244,17 @@ void setup()
     Serial.printf("Connecting to WiFi\n");
     wifiConnect();
 
-    // Serial.println("Checking if OTA build exists");
-    // bool updatedNeeded = esp32FOTA.execHTTPcheck();
-    // if (updatedNeeded) {
-    //   Serial.println("Update needed");
-    //   esp32FOTA.execOTA();
-    // } else {
-    //   Serial.println("Update not needed");
-    // }
+    Serial.println("Checking if OTA build exists");
+    bool updatedNeeded = esp32FOTA.execHTTPcheck();
+    if (updatedNeeded) {
+      Serial.println("Update needed");
+      esp32FOTA.execOTA();
+    } else {
+      Serial.println("Update not needed");
+    }
+
     Serial.println("Checking sensors for updates");
     processSensorUpdates();
-
-    
-
   }
 
   // ESP32 Deep Sleep Mode
@@ -331,13 +365,9 @@ void processSensorUpdates(void)
 #endif
   //send sensor data to IOT destination
   sendData(&environment);
-
-  //send sensor data to MQTT
-#ifdef MQTT
-//  SendDataMQTT(&environment);
-#endif
-
+  BlinkLED(2);
   WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
 }
 
 //===========================================
