@@ -28,6 +28,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Prepare Project
-      run: mv src/sec.h src/secrets.h
+      run: cp src/sec.h src/secrets.h
     - name: Run PlatformIO
       run: pio run

@@ -17,7 +17,7 @@
 #include <time.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
-#include "Wire.h"
+// #include "Wire.h"
 #include <BH1750.h>
 #include <Zanshin_BME680.h>
 #include "Adafruit_SI1145.h"
@@ -109,11 +109,17 @@ bsec_virtual_sensor_t sensorList[10] = {
 };
 
 //rainfall is stored here for historical data uses RTC
-struct historicalData
+struct rainfallData
 {
+  unsigned int intervalRainfall;
   unsigned int hourlyRainfall[24];
   unsigned int current60MinRainfall[12];
+  unsigned int hourlyCarryover;
+  unsigned int priorHour;
+  unsigned int minuteCarryover;
+  unsigned int priorMinute;
 };
+
 
 //===========================================
 // RTC Memory storage
@@ -121,8 +127,9 @@ struct historicalData
 RTC_DATA_ATTR volatile int rainTicks = 0;
 RTC_DATA_ATTR int lastHour = 0;
 RTC_DATA_ATTR time_t nextUpdate;
-RTC_DATA_ATTR struct historicalData rainfall;
+RTC_DATA_ATTR struct rainfallData rainfall;
 RTC_DATA_ATTR int bootCount = 0;
+RTC_DATA_ATTR unsigned int elapsedTime = 0;
 //======== BSEC STUFF
 RTC_DATA_ATTR uint8_t sensor_state[BSEC_MAX_STATE_BLOB_SIZE] = {0};
 RTC_DATA_ATTR int64_t sensor_state_time = 0;
@@ -340,6 +347,7 @@ void processSensorUpdates(void)
 {
   struct sensorData environment;
 #ifdef USE_EEPROM
+  Serial.println("Checking eeprom\n");
   readEEPROM(&rainfall);
 #endif
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
@@ -347,6 +355,7 @@ void processSensorUpdates(void)
   printTimeNextWake();
 
   //Get Sensor data
+  Serial.println("read env\n");
   readSensors(&environment);
 
   //move rainTicks into hourly containers
@@ -355,15 +364,18 @@ void processSensorUpdates(void)
   clearRainfallHour(timeinfo.tm_hour + 1);
   rainTicks = 0;
 
+  Serial.println("rain ticks\n");
   //Start sensor housekeeping
   addTipsToHour(rainTicks);
   clearRainfallHour(timeinfo.tm_hour + 1);
   rainTicks = 0;
   //Conditional write of rainfall data to EEPROM
 #ifdef USE_EEPROM
+  Serial.println("rain write\n");
   conditionalWriteEEPROM(&rainfall);
 #endif
   //send sensor data to IOT destination
+  Serial.println("send data\n");
   sendData(&environment);
   BlinkLED(2);
   WiFi.disconnect();
@@ -412,3 +424,16 @@ bool CheckIAQSensor() {
   return true;
 }
 
+//===========================================
+// MonPrintf: diagnostic printf to terminal
+//===========================================
+void MonPrintf( const char* format, ... ) {
+  char buffer[200];
+  va_list args;
+  va_start(args, format);
+  vsprintf(buffer, format, args);
+  va_end( args );
+#ifdef SerialMonitor
+  Serial.printf("%s", buffer);
+#endif
+}
