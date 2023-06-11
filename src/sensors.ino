@@ -138,7 +138,7 @@ void readBME(struct sensorData *environment) {
 //=======================================================
 void readUV(struct sensorData *environment)
 { 
-  environment->uvIndex = uv.readUV() / 100;
+  environment->uvIndex = (float) uv.readUV() / 100;
   environment->visLight = uv.readVisible();
   environment->infLight = uv.readIR();
   Serial.println("UV Index: " + String(environment->uvIndex));

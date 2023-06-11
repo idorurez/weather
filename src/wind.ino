@@ -1,9 +1,11 @@
 //=======================================================
 // Variables used in calculating the windspeed (from ISR)
 //=======================================================
+const int MAX_TICKS = 200; // 61 * 2 + 1 mph is gale force winds
+const float TIME_THRESHOLD_MS = 120000; // calculate last 2 minutes only, WMO recommendation
 volatile unsigned long timeSinceLastTick = 0;
 volatile unsigned long lastTick = 0;
-volatile unsigned long tickTime[20] = {0};
+volatile unsigned long tickTime[MAX_TICKS] = {0};
 volatile int count = 0;
 
 //========================================================================
@@ -11,43 +13,23 @@ volatile int count = 0;
 //========================================================================
 void readWindSpeed(struct sensorData *environment )
 {
+  Serial.println("reading wind speed\n");
   float windSpeed = 0;
-  int position;
-  long msTotal = 0;
   int samples = 0;
+  long elapsed = 0;
+  unsigned long currTime = millis();
 
-  //intentionally ignore the zeroth element
-  //look at up to 3 (or 6) revolutions to get wind speed
-  //Again, I see 2 ticks on anemometer
-  if (count)
-  {
-    for (position = 1; position < 7; position++)
-    {
-      if (tickTime[position])
-      {
-        msTotal += tickTime[position];
-        samples ++;
-      }
+
+  for (int tick = 0; tick < MAX_TICKS; tick++)  { 
+    elapsed = currTime - tickTime[tick];
+    if ((0 < elapsed <= TIME_THRESHOLD_MS) && (tickTime[tick] != 0)) {
+      samples++;
     }
   }
-  //Average samples
-  if (msTotal > 0 && samples > 0)
-  {
-    windSpeed = 1.49 * 1000 / (msTotal / samples);
-  }
-  else
-  {
-    MonPrintf("No Wind data");
-    windSpeed = 0;
-  }
-  //I see 2 ticks per revolution
-  windSpeed = windSpeed / WIND_TICKS_PER_REVOLUTION;
 
-#ifdef METRIC
-  windSpeed =  windSpeed * 1.60934;
-#endif
+  windSpeed = (samples * 1.491) / 120;
+
   MonPrintf("WindSpeed: %f\n", windSpeed);
-  windSpeed = int((windSpeed + .05) * 10) / 10;
   environment->windSpeed = windSpeed;
 }
 
@@ -88,13 +70,14 @@ void readWindDirection(struct sensorData *environment)
 //=======================================================
 void IRAM_ATTR windTick(void)
 {
-  timeSinceLastTick = millis() - lastTick;
   //software debounce attempt
-  //record up to 10 ticks from anemometer
-  if (timeSinceLastTick > 10 && count < 10)
-  {
-    lastTick = millis();
-    tickTime[count] = timeSinceLastTick;
+  if (count < MAX_TICKS) {
+    tickTime[count] = millis();
     count++;
+  } 
+
+  // reset the counter once we've counted the last one
+  if (count == (MAX_TICKS - 1)) {
+    count = 0;
   }
 }

@@ -141,6 +141,14 @@
  .pio/libdeps/esp32dev/Adafruit\ SI1145\ Library/Adafruit_SI1145.h \
  .pio/libdeps/esp32dev/Adafruit\ BusIO/Adafruit_I2CDevice.h \
  C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/esp32/include/soc/rtc_cntl_reg.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/driver/include/driver/rtc_io.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/include/soc/rtc_io_periph.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/esp32/include/soc/rtc_io_channel.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/esp32/include/soc/rtc_io_reg.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/esp32/include/soc/rtc_io_struct.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/esp32/include/soc/rtc_cntl_struct.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/soc/esp32/include/soc/sens_struct.h \
+ C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/hal/include/hal/rtc_io_types.h \
  C:/Users/neuro/.platformio/packages/framework-arduinoespressif32@3.20000.220418/tools/sdk/esp32/include/esp_system/include/esp_task_wdt.h \
  .pio/libdeps/esp32dev/BSEC\ Software\ Library/src/bsec.h \
  .pio/libdeps/esp32dev/BSEC\ Software\ Library/src/inc/bsec_datatypes.h \

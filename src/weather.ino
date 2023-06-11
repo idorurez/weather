@@ -5,8 +5,10 @@
 // Additional rewrite by Alfred Young
 // alfredy@gmail.com
 
-#define BUILD_VER 3.1
+#define BUILD_VER 7.7f
 #define USE_EEPROM
+
+#define SerialMonitor
 
 //===========================================
 // Includes
@@ -24,6 +26,7 @@
 #include <stdarg.h>
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+#include <driver/rtc_io.h>
 #include <esp_task_wdt.h>
 #include <bsec.h>
 #include <ArduinoOTA.h>
@@ -45,7 +48,8 @@
 #define TEMP_PIN      4  // DS18B20 hooked up to GPIO pin 4
 #define LED_BUILTIN   2  //Diagnostics using built-in LED
 #define SEC 1E6          //Multiplier for uS based math
-#define WDT_TIMEOUT 60
+#define WDT_TIMEOUT 180 // timeout
+#define REBOOT_TIMEOUT      259200  // reboot every 3 days
 
 //===========================================
 // Externs
@@ -89,7 +93,6 @@ struct sensorData
   int photoResistor = 0;
   int batteryAdc = 0;
 };
-
 const uint8_t bsec_config_iaq[] = {
   #include "config/generic_33v_300s_4d/bsec_iaq.txt"
 };
@@ -182,10 +185,18 @@ esp32FOTA esp32FOTA("esp32-fota-main-weather", BUILD_VER);
 // setup:
 //===========================================
 
-
 void setup()
 {
 
+  setCpuFrequencyMhz (80);
+  rtc_gpio_init(GPIO_NUM_12);
+  rtc_gpio_set_direction(GPIO_NUM_12, RTC_GPIO_MODE_OUTPUT_ONLY);
+  rtc_gpio_set_level(GPIO_NUM_12, 1);
+
+  // if (millis() >= REBOOT_TIMEOUT) {
+  //   ESP.restart();
+  // }
+ 
   esp32FOTA.checkURL = "http://192.168.50.105/build/build.json";
 
 
@@ -201,7 +212,7 @@ void setup()
 
   Serial.begin(115200);  
   Serial.printf("\nWeather station - Deep sleep version.\n");
-  Serial.printf("Version %f\n\n", BUILD_VER);
+  Serial.printf("Version %d\n\n", BUILD_VER);
   BlinkLED(1);
   bootCount++;
   
@@ -266,7 +277,7 @@ void setup()
 
   // ESP32 Deep Sleep Mode
   UpdateIntervalModified = nextUpdate - mktime(&timeinfo);
-  if (UpdateIntervalModified <= 0)
+  if (UpdateIntervalModified < 3)
   {
     UpdateIntervalModified = 3;
   }
@@ -333,9 +344,11 @@ void sleepyTime(long UpdateIntervalModified)
 {
   Serial.println("\n\n\nGoing to sleep now...");
   Serial.printf("Waking in %i seconds\n\n\n\n\n\n\n\n\n\n", UpdateIntervalModified);
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_25, 0);
-  // esp_deep_sleep(UpdateIntervalModified * SEC);
+
+  rtc_gpio_set_level(GPIO_NUM_12, 0);
   esp_sleep_enable_timer_wakeup(UpdateIntervalModified * SEC);
+  // esp_sleep_enable_ext0_wakeup(GPIO_NUM_25, 0);
+  elapsedTime = (int)millis() / 1000;
   esp_deep_sleep_start();
 }
 
@@ -347,7 +360,6 @@ void processSensorUpdates(void)
 {
   struct sensorData environment;
 #ifdef USE_EEPROM
-  Serial.println("Checking eeprom\n");
   readEEPROM(&rainfall);
 #endif
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
@@ -359,16 +371,12 @@ void processSensorUpdates(void)
   readSensors(&environment);
 
   //move rainTicks into hourly containers
+  rainfall.intervalRainfall = rainTicks;
   Serial.printf("Current Hour: %i\n\n", timeinfo.tm_hour);
   addTipsToHour(rainTicks);
   clearRainfallHour(timeinfo.tm_hour + 1);
   rainTicks = 0;
 
-  Serial.println("rain ticks\n");
-  //Start sensor housekeeping
-  addTipsToHour(rainTicks);
-  clearRainfallHour(timeinfo.tm_hour + 1);
-  rainTicks = 0;
   //Conditional write of rainfall data to EEPROM
 #ifdef USE_EEPROM
   Serial.println("rain write\n");
@@ -385,15 +393,15 @@ void processSensorUpdates(void)
 //===========================================
 // BlinkLED: Blink BUILTIN x times
 //===========================================
-void BlinkLED(int count)
+void BlinkLED(int num)
 {
   int x;
-  //if reason code =0, then set count =1 (just so I can see something)
-  if (!count)
+  //if reason code =0, then set num =1 (just so I can see something)
+  if (!num)
   {
-    count = 1;
+    num = 1;
   }
-  for (x = 0; x < count; x++)
+  for (x = 0; x < num; x++)
   {
     //LED ON
     digitalWrite(LED_BUILTIN, HIGH);
@@ -436,4 +444,17 @@ void MonPrintf( const char* format, ... ) {
 #ifdef SerialMonitor
   Serial.printf("%s", buffer);
 #endif
+}
+
+
+// Function that gets current epoch time
+unsigned long getTime() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    //Serial.println("Failed to obtain time");
+    return(0);
+  }
+  time(&now);
+  return now;
 }

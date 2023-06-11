@@ -1,6 +1,6 @@
 // Variables used in software delay to supress spurious counts on rain_tip
-volatile unsigned long timeSinceLastTip = 0;
-volatile unsigned long validTimeSinceLastTip = 0;
+// volatile unsigned long timeSinceLastTip = 0;
+// volatile unsigned long validTimeSinceLastTip = 0;
 volatile unsigned long lastTip = 0;
 
 //=======================================================================
@@ -40,10 +40,10 @@ void clearRainfallHour(int hourPtr)
 //=======================================================================
 //  addTipsToHour: increment current hour tip count
 //=======================================================================
-void addTipsToHour(int count)
+void addTipsToHour(int num)
 {
   int hourPtr = timeinfo.tm_hour;
-  rainfall.hourlyRainfall[hourPtr] = rainfall.hourlyRainfall[hourPtr] + count;
+  rainfall.hourlyRainfall[hourPtr] = rainfall.hourlyRainfall[hourPtr] + num;
 }
 
 //=======================================================================
@@ -109,10 +109,10 @@ void clearRainfallMinute(int minutePtr)
 //=======================================================================
 //  addTipsToMinute: increment current hour tip count
 //=======================================================================
-void addTipsToMinute(int count)
+void addTipsToMinute(int num)
 {
   int minute = timeinfo.tm_hour;
-  rainfall.current60MinRainfall[minute] = rainfall.current60MinRainfall[minute] + count;
+  rainfall.current60MinRainfall[minute] = rainfall.current60MinRainfall[minute] + num;
 }
 
 //=======================================================================
@@ -154,12 +154,12 @@ int last60min(void)
 //ISR
 void IRAM_ATTR rainTick(void)
 {
-  timeSinceLastTip = millis() - lastTip;
+  // timeSinceLastTip = millis() - lastTip;
   //software debounce attempt
-  if (timeSinceLastTip > 400)
-  {
-    validTimeSinceLastTip = timeSinceLastTip;
-    rainTicks++;
-    lastTip = millis();
-  }
+  // if (timeSinceLastTip > 400)
+  // {
+  // validTimeSinceLastTip = timeSinceLastTip;
+  rainTicks++;
+  // lastTip = millis();
+  // }
 }
